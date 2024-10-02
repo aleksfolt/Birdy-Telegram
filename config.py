@@ -1,3 +1,13 @@
+import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ROCKET_TOKEN = os.getenv("ROCKET_TOKEN")
+CRYPTO_TOKEN = os.getenv("CRYPTO_TOKEN")
+
 birds = [
     {"rarity": "Редкая", "name": "Сибирский мохноногий ястреб", "place": "Сибирь", "photo": "images/bird_rare.jpg",
      "points": "1000"},
