@@ -19,6 +19,8 @@ from handlers.knock import knock_router
 from handlers.premium import premium_router
 from handlers.tea import tea_router
 
+import config
+
 
 async def reset_cooldown_user(user_id):
     async with aiosqlite.connect('database.db') as db:
@@ -62,7 +64,7 @@ async def main():
     await create_knock_cards_tables()
     await create_mailing_tables()
     await create_premium_table()
-    bot = Bot(token="7236929257:AAFacKzb-DKoerdeya0liwcZ4i0CaaAX7mk")
+    bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_routers(handlers_router, tea_router, knock_router, adm_router, premium_router, inline_router)
     await bot.delete_webhook(drop_pending_updates=True)
