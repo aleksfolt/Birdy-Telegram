@@ -7,6 +7,8 @@ from database.premium_db import add_premium_user
 from kb import premium_kb, pay_premium_kb, pay_cb, payment_keyboard
 from loader import bot, dp
 
+import config
+
 premium_router = Router()
 prem_text = (f"💎 Birdy Premium\n\n"
              f"👑 Преимущества:\n"
@@ -24,8 +26,8 @@ prem_textt = (f"💎 Birdy Premium\n\n"
               f"🍵 Чай выдается от 500 до 2000 вместо 200 до 2000.\n"
               f"🗓️ Срок действия 30 дней.\n\n"
               f"💳  Выберите способ оплаты:")
-crypto = AioCryptoPay(token='275932:AAJGiROUIeR5syysCkBUgHT3N8IBnPcriKR', network=Networks.MAIN_NET)
-api = aiorocket.Rocket('596b0776e2bb0331fbf0de951')
+crypto = AioCryptoPay(token=config.CRYPTO_TOKEN, network=Networks.MAIN_NET)
+api = aiorocket.Rocket(config.ROCKET_TOKEN)
 invoices = {}
 
 
