@@ -1,34 +1,43 @@
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
-import os
 import random
 
 from aiogram import Router, F
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandStart, CommandObject
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto
 
 from config import birds, birds_2
-from database.knock_db import get_user_data, save_user_data
-from database.mailing import add_chat, add_user
+from database.knock_db import get_user_data, save_user_data, user_exists_knock
+from database.mailing import add_chat, add_user, check_user_exists
 from database.premium_db import get_premium_user, has_premium
+from database.tea_db import user_exists_tea
+from filters.FloodWait import RateLimitFilter
 from kb import profile_kb, cards_kb, rarity_kb, cool_card_kb, start_keyboard
 
 handlers_router = Router()
 
 
-@handlers_router.message(Command('start'))
-async def start_command(message: Message):
-    first_name = message.from_user.first_name
-    text = (f"👋 {first_name}, добро пожаловать в Birdy.\n\n"
-            f"👾 Тут ты можешь пить чай и соревноваться за место в топе, собирать карточки и просто наслаждаться ботом.\n\n"
-            f"🐦‍⬛️ Бот будет улучшаться и обновляться с каждым разом.\n\n")
-    if message.chat.type in ["supergroup", "group"]:
-        await add_chat(message.chat.id)
-        text += "⚙️ Для получения всех команд напишите /help."
-        await message.reply(text)
-    elif message.chat.type == "private":
-        await add_user(message.from_user.id)
-        await message.answer(text, reply_markup=await start_keyboard())
+@handlers_router.message(CommandStart())
+async def start_command(message: Message, command: CommandObject):
+    if command.args is not None:
+        user_id = message.from_user.id
+        base = await check_user_exists(user_id)
+        tea_base = await user_exists_tea(user_id)
+        knock_base = await user_exists_knock(user_id)
+        if not base and not tea_base or not knock_base:
+            await message.answer(user_id=command.args, text="У вас новый реферал! (система рефералов еще не готова)")
+        else:
+            pass
+    else:
+        first_name = message.from_user.first_name
+        text = (f"👋 {first_name}, добро пожаловать в Birdy.\n\n"
+                f"👾 Тут ты можешь пить чай и соревноваться за место в топе, собирать карточки и просто наслаждаться ботом.\n\n"
+                f"🐦‍⬛️ Бот будет улучшаться и обновляться с каждым разом.\n\n")
+        if message.chat.type in ["supergroup", "group"]:
+            await add_chat(message.chat.id)
+            text += "⚙️ Для получения всех команд напишите /help."
+            await message.reply(text)
+        elif message.chat.type == "private":
+            await add_user(message.from_user.id)
+            await message.answer(text, reply_markup=await start_keyboard())
 
 
 @handlers_router.message(Command("help"))
@@ -53,7 +62,7 @@ async def help_command(message: Message):
     await message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
 
 
-@handlers_router.message(F.text.casefold().in_(
+@handlers_router.message(RateLimitFilter(1), F.text.casefold().in_(
     ["бпрофиль".casefold(), "/profile".casefold(), "бирди профиль".casefold(), "👤 бпрофиль".casefold()]))
 async def birdy_profile(message: Message):
     if message.chat.type in ["supergroup", "group"]:
@@ -63,11 +72,7 @@ async def birdy_profile(message: Message):
     user_id = message.from_user.id
     first_name = message.from_user.first_name
     last_name = message.from_user.last_name or ""
-    premium_background_image_path = "background2_image.jpg"
     prem_text = await get_premium_user(user_id)
-    background_image_path = premium_background_image_path
-    avatar_position = (337, 180)
-    avatar_size = (293, 303)
     user_data = await get_user_data(user_id, first_name)
     count_birds = len(user_data['birds'])
 
@@ -171,7 +176,6 @@ async def show_cards(callback: CallbackQuery):
 
     await callback.answer()
 
-
 @handlers_router.callback_query(F.data.startswith("cool_card:"))
 async def cool_card_handler(callback: CallbackQuery):
     user_id = callback.data.split(":")[1]
@@ -233,3 +237,13 @@ async def buy_cool_card(callback: CallbackQuery):
                                             text=f"{first_name}, вы уже собрали все крутки.")
     else:
         await callback.answer("Не достаточно очков для покупки!", show_alert=True)
+
+
+@handlers_router.callback_query(F.data.startswith("ref:"))
+async def ref_handler(callback: CallbackQuery):
+    user_id = callback.data.split(":")[1]
+    if user_id != str(callback.from_user.id):
+        await callback.answer("Вы арестованы, руки вверх!")
+        return
+    await callback.message.reply(f"Ваша реферальная ссылка:\n"
+                                 f"https://t.me/birdy_ibot?start={user_id}", disable_web_page_preview=True)

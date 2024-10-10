@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import os
 import time
@@ -10,7 +11,7 @@ from aiogram.types import FSInputFile
 
 from database.knock_db import create_knock_cards_tables
 from database.mailing import create_mailing_tables
-from database.premium_db import create_premium_table, add_premium_user
+from database.premium_db import create_premium_table
 from database.tea_db import create_tea_table
 from handlers.admin import adm_router
 from handlers.handlers import handlers_router
@@ -20,13 +21,13 @@ from handlers.premium import premium_router
 from handlers.tea import tea_router
 
 import config
+from middlewares.throttling import ThrottlingMiddleware
 
 
 async def reset_cooldown_user(user_id):
     async with aiosqlite.connect('database.db') as db:
         await db.execute('UPDATE knock_users SET last_usage = 0 WHERE user_id = ?', (user_id,))
         await db.commit()
-
 
 async def create_birds_with_file_ids(bot, chat_id, directory):
     files = os.listdir(directory)
@@ -67,6 +68,7 @@ async def main():
     bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_routers(handlers_router, tea_router, knock_router, adm_router, premium_router, inline_router)
+    dp.message.middleware(ThrottlingMiddleware())
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 

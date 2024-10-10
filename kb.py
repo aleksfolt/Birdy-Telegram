@@ -10,7 +10,8 @@ async def profile_kb(user_id):
     builder.add(InlineKeyboardButton(text="🎴 Мои карточки", callback_data=f"cards:{user_id}"))
     builder.add(InlineKeyboardButton(text="🀄️ Купить лимитку", callback_data=f"cool_card:{user_id}"))
     builder.add(InlineKeyboardButton(text="💎 Премиум", callback_data=f"premium:{user_id}"))
-    builder.adjust(2, 1)
+    builder.add(InlineKeyboardButton(text="🌀 Рефералка", callback_data=f"ref:{user_id}"))
+    builder.adjust(2, 2)
     return builder.as_markup()
 
 

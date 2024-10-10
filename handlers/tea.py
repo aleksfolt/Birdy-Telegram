@@ -6,6 +6,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from html import escape
 from database.premium_db import has_premium
+from filters.FloodWait import RateLimitFilter
 
 tea_router = Router()
 TIME_LIMIT = 600
@@ -30,7 +31,7 @@ tea_names = [
 ]
 
 
-@tea_router.message(F.text.casefold().in_(
+@tea_router.message(RateLimitFilter(1), F.text.casefold().in_(
     ["чай".casefold(), "/tea".casefold(), "/chai".casefold(), "☕️ чай".casefold()]))
 async def handle_tea(message: Message):
     user_id = message.from_user.id
@@ -74,7 +75,7 @@ async def handle_tea(message: Message):
                         f"Всего выпито: {new_total_tea_count} мл.")
 
 
-@tea_router.message(F.text.casefold().in_(
+@tea_router.message(RateLimitFilter(1), F.text.casefold().in_(
     ["топ чая", "чай топ", "чая топ", "⭐️ топ чая"]))
 async def handle_top(message: Message):
     user_id = message.from_user.id

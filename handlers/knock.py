@@ -10,12 +10,13 @@ from config import birds, birds_2
 from database.knock_db import save_user_data, get_user_data
 from database.mailing import add_chat, add_user
 from database.premium_db import has_premium
+from filters.FloodWait import RateLimitFilter
 from kb import cards_top_kb, back_cards
 
 knock_router = Router()
 
 
-@knock_router.message(F.text.func(lambda text: text.casefold() in [
+@knock_router.message(RateLimitFilter(1), F.text.func(lambda text: text.casefold() in [
     "кнок", "/knock", "/card", "🃏 кнок"]))
 async def knock_cards_function(message: Message):
     user_id = message.from_user.id
@@ -104,7 +105,7 @@ async def knock_cards_function(message: Message):
         await save_user_data(user_data)
 
 
-@knock_router.message(F.text.func(lambda text: text.casefold() in [
+@knock_router.message(RateLimitFilter(1), F.text.func(lambda text: text.casefold() in [
     "топ карточек", "/cards_top", "топ по карточкам", "🏆 топ карточек"]))
 async def top_cards_function(message: Message):
     user_id = message.from_user.id
